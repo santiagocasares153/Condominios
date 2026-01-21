@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { XCircle, Save, Loader2, Calendar } from 'lucide-react';
+import { XCircle, Save, Loader2 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
-import NavigationMenu from '../../Menu';
 
 // --- Interfaces ---
 interface Banco { Nombre: string; Codigo: string; }
@@ -40,8 +39,8 @@ export const Operaciones: React.FC<OperacionesBancosTabProps> = ({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [listaBancos, setListaBancos] = useState<Banco[]>([]);
     const [listaCuentasDestino, setListaCuentasDestino] = useState<CuentaDestino[]>([]);
-    const [isLoadingBancos, setIsLoadingBancos] = useState(false);
-    const [isLoadingCuentas, setIsLoadingCuentas] = useState(false);
+    const [, setIsLoadingBancos] = useState(false);
+    const [, setIsLoadingCuentas] = useState(false);
     
     const dateTasaRef = useRef<HTMLInputElement>(null);
     const dateOpRef = useRef<HTMLInputElement>(null);

@@ -68,7 +68,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   vehiculos,
   servicios,
   bitacora,
-  estadoCuenta,
+  //estadoCuenta,
   cobranzaData,
   onSaveServicios,
   onUpdateVehiculos,
@@ -149,7 +149,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       case "bitacora":
         return <BitacoraTab data={bitacora} />;
       case "estadocuenta":
-        return <EstadoCuentaTab data={estadoCuenta} />;
+        return <EstadoCuentaTab idEntidad={idEntidad} />;
       case "sms":
         return <Sms />;
       case "whattsap":
