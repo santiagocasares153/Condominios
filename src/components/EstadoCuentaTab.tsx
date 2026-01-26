@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, MoreVertical, ClipboardCopy, Printer, FileSpreadsheet, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext'; // Asumiendo que usas un context para el token
+import { useAuth } from '../context/AuthContext';
+import ModalImprimirBancos from './bancos/detallesBancos/ModalImprimirBancos'; // Asegúrate de que la ruta sea correcta
 
 interface EstadoCuentaTabProps {
     idEntidad: number;
 }
 
-// Componente Leyenda (Mantenido exactamente igual)
 const LeyendaEdoCta: React.FC = () => {
     return (
         <div className="flex justify-start items-center space-x-4 text-sm mt-2 mb-3 p-2 rounded-lg bg-gray-100 dark:bg-gray-700 dark:border-gray-600 border border-gray-200">
@@ -37,35 +37,70 @@ const EstadoCuentaTab: React.FC<EstadoCuentaTabProps> = ({ idEntidad }) => {
     const [sortColumn, setSortColumn] = useState<number | null>(null);
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-    // Clases comunes para el menú
+    // Estados para el Modal de Impresión
+    const [modalOpen, setModalOpen] = useState(false);
+    const [htmlContent, setHtmlContent] = useState<string | null>(null);
+    const [loadingModal, setLoadingModal] = useState(false);
+
     const menuItemClasses = "flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700";
     const menuIconClasses = "w-4 h-4 text-gray-600 dark:text-gray-400";
 
-    // Petición a la API
-        interface ApiResponse<T> {
-            status: string;
-            body: T;
-        }
-    
-        const fetchEstadoCuenta = useCallback(async () => {
-            setLoading(true);
-            try {
-                const response = await axios.get<ApiResponse<any[]>>(`https://bknd.condominios-online.com/entidades/cuenta/${idEntidad}`, {
-                    headers: { Authorization: `Bearer ${user?.token}` }
-                });
-                if (response.data?.status === "success") {
-                    setData(response.data.body ?? []);
-                }
-            } catch (error) {
-                console.error("Error al obtener estado de cuenta:", error);
-            } finally {
-                setLoading(false);
+    interface ApiResponse<T> {
+        status: string;
+        body: T;
+    }
+
+    const fetchEstadoCuenta = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await axios.get<ApiResponse<any[]>>(`https://bknd.condominios-online.com/entidades/cuenta/${idEntidad}`, {
+                headers: { Authorization: `Bearer ${user?.token}` }
+            });
+            if (response.data?.status === "success") {
+                setData(response.data.body ?? []);
             }
-        }, [idEntidad, user?.token]);
+        } catch (error) {
+            console.error("Error al obtener estado de cuenta:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [idEntidad, user?.token]);
 
     useEffect(() => {
         fetchEstadoCuenta();
     }, [fetchEstadoCuenta]);
+
+// FUNCIÓN PARA LA PETICIÓN POST DE IMPRESIÓN
+  const handlePrintAction = async () => {
+    setIsMenuOpen(false);
+    setModalOpen(true);
+    setLoadingModal(true);
+
+    try {
+        const payload = {
+            nombre_funcion: "prepFrmEdoCta",
+            usuario: user?.nombreUsuario || "",
+            idEntidad: idEntidad
+        };
+
+        const response = await axios.post<{ result?: string }>(`https://bknd.condominios-online.com/entidades/function`, payload, {
+            headers: { Authorization: `Bearer ${user?.token}` }
+        });
+
+        // Accedemos directamente a la propiedad result del JSON que enviaste
+        if (response.data?.result) {
+            setHtmlContent(response.data.result);
+        } else {
+            setHtmlContent("<p class='text-center p-4'>No se recibió contenido válido del servidor.</p>");
+        }
+
+    } catch (error) {
+        console.error("Error al generar formato de impresión:", error);
+        setHtmlContent("<p class='text-red-500 p-4 font-bold'>Error al conectar con el servidor de impresión.</p>");
+    } finally {
+        setLoadingModal(false);
+    }
+};
 
     const formatMoney = (amount: any) => {
         const value = parseFloat(String(amount).replace(/[^0-9.-]+/g, ""));
@@ -113,11 +148,6 @@ const EstadoCuentaTab: React.FC<EstadoCuentaTabProps> = ({ idEntidad }) => {
         return sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1 text-gray-800 dark:text-gray-200" /> : <ArrowDown className="w-3 h-3 ml-1 text-gray-800 dark:text-gray-200" />;
     };
 
-    const handleAction = (action: string) => {
-        console.log(`Acción de Estado de Cuenta: ${action}`);
-        setIsMenuOpen(false);
-    };
-
     return (
         <div className="flex flex-col h-full space-y-2">
             <h3 className="text-lg font-bold text-center text-gray-700 dark:text-gray-100 mb-2">Estado de Cuenta</h3>
@@ -138,20 +168,22 @@ const EstadoCuentaTab: React.FC<EstadoCuentaTabProps> = ({ idEntidad }) => {
                     <button onClick={() => setIsMenuOpen(prev => !prev)} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
                         <MoreVertical className="w-5 h-5 text-gray-700 dark:text-gray-200" />
                     </button>
-                    <div className={`absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-10 ${isMenuOpen ? '' : 'hidden'}`}>
-                        <div className="py-1">
-                            <button onClick={() => handleAction('copy')} className={`w-full ${menuItemClasses}`}>
-                                <ClipboardCopy className={menuIconClasses} /> <span>Copiar al portapapeles</span>
-                            </button>
-                            <button onClick={() => handleAction('print')} className={`w-full ${menuItemClasses}`}>
-                                <Printer className={menuIconClasses} /> <span>Imprimir</span>
-                            </button>
-                            <div className="border-t dark:border-gray-600"></div>
-                            <button className={`w-full ${menuItemClasses}`}>
-                                <FileSpreadsheet className={menuIconClasses} /> <span>Exportar a Excel</span>
-                            </button>
+                    {isMenuOpen && (
+                        <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-20 border dark:border-gray-600">
+                            <div className="py-1">
+                                <button onClick={() => setIsMenuOpen(false)} className={`w-full ${menuItemClasses}`}>
+                                    <ClipboardCopy className={menuIconClasses} /> <span>Copiar al portapapeles</span>
+                                </button>
+                                <button onClick={handlePrintAction} className={`w-full ${menuItemClasses}`}>
+                                    <Printer className={menuIconClasses} /> <span>Imprimir</span>
+                                </button>
+                                <div className="border-t dark:border-gray-600"></div>
+                                <button className={`w-full ${menuItemClasses}`}>
+                                    <FileSpreadsheet className={menuIconClasses} /> <span>Exportar a Excel</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
@@ -209,6 +241,17 @@ const EstadoCuentaTab: React.FC<EstadoCuentaTabProps> = ({ idEntidad }) => {
                     </table>
                 )}
             </div>
+
+            {/* MODAL DE IMPRESIÓN */}
+            <ModalImprimirBancos 
+                isOpen={modalOpen} 
+                onClose={() => {
+                    setModalOpen(false);
+                    setHtmlContent(null);
+                }} 
+                htmlContent={htmlContent}
+                loading={loadingModal}
+            />
         </div>
     );
 };

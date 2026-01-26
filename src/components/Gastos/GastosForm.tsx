@@ -9,6 +9,7 @@ import {
   Checkbox,
   Modal,
   Fade,
+  useTheme, // 👈 Importamos el hook para acceder al tema
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
 import NavigationMenu from "../../components/Menu";
@@ -38,6 +39,7 @@ const formatCurrency = (value: number): string =>
   });
 
 export default function GastosCondominio() {
+  const theme = useTheme(); // 👈 Accedemos al tema actual (claro u oscuro)
   const [data, setData] = useState<GastosFormState>({
     ordinarios: [],
     extraordinarios: [],
@@ -62,7 +64,6 @@ export default function GastosCondominio() {
       { id: 8, concepto: "Colaboración", proveedor: "Floristería X", documento: "X103", monto: 10, saldo: 0, especial: true, tipo: "extraordinario" },
     ];
     setData({ ...data, ordinarios: ord, extraordinarios: ext });
-    // eslint-disable-next-line
   }, []);
 
   const handleAdd = (tipo: "ordinario" | "extraordinario") => {
@@ -108,24 +109,36 @@ export default function GastosCondominio() {
   const cuota = data.nroInmuebles > 0 ? totalGeneral / data.nroInmuebles : 0;
 
   return (
-    <Box sx={{ bgcolor: "#121212", color: "#e0e0e0", minHeight: "100vh", p: 3 }}>
+    <Box sx={{ 
+      bgcolor: "background.default", // 👈 Dinámico
+      color: "text.primary",         // 👈 Dinámico
+      minHeight: "100vh", 
+      p: 3 
+    }}>
       <NavigationMenu />
-    <Paper
-  sx={{
-    bgcolor: "#1e1e1e",
-    p: 3,
-    borderRadius: 3,
-    maxWidth: 900,
-    mx: "auto",
-    mt: 6, // 👈 añade espacio arriba para bajar todo el bloque
-  }}
-  elevation={4}
->
-
+      
+      <Paper
+        sx={{
+          bgcolor: "background.paper", // 👈 Dinámico
+          p: 3,
+          borderRadius: 3,
+          maxWidth: 900,
+          mx: "auto",
+          mt: 6,
+          border: `1px solid ${theme.palette.divider}`, // Borde suave dinámico
+        }}
+        elevation={4}
+      >
         {/* Header principal */}
-        <Box display="flex" justifyContent="space-between" alignItems="center" borderBottom="1px solid #333" pb={1}>
+        <Box 
+          display="flex" 
+          justifyContent="space-between" 
+          alignItems="center" 
+          borderBottom={`1px solid ${theme.palette.divider}`} 
+          pb={1}
+        >
           <Typography variant="h5" fontWeight="bold">GASTOS</Typography>
-          <Typography color="#90caf9" fontWeight="bold">
+          <Typography color="primary.main" fontWeight="bold">
             {new Date().toLocaleDateString("es-ES", { month: "short", year: "numeric" }).toUpperCase()}
           </Typography>
         </Box>
@@ -133,17 +146,17 @@ export default function GastosCondominio() {
         {/* Totales */}
         <Box display="flex" justifyContent="center" alignItems="center" gap={4} mt={2} mb={3}>
           <Typography fontWeight="bold" fontSize="1.1rem">
-            Total: <span style={{ color: "#4caf50" }}>{formatCurrency(totalGeneral)}</span>
+            Total: <Box component="span" sx={{ color: "success.main" }}>{formatCurrency(totalGeneral)}</Box>
           </Typography>
           <Typography fontWeight="bold" fontSize="1.1rem">
-            Cuota: <span style={{ color: "#64b5f6" }}>{formatCurrency(cuota)}</span>
+            Cuota: <Box component="span" sx={{ color: "info.main" }}>{formatCurrency(cuota)}</Box>
           </Typography>
         </Box>
 
         {["ordinario", "extraordinario"].map((tipo) => {
           const items = tipo === "ordinario" ? data.ordinarios : data.extraordinarios;
           const total = tipo === "ordinario" ? totalOrdinarios : totalExtraordinarios;
-          const color = tipo === "ordinario" ? "#4caf50" : "#ef5350";
+          const sectionColor = tipo === "ordinario" ? theme.palette.success.main : theme.palette.error.main;
 
           return (
             <Box key={tipo} mb={4}>
@@ -155,7 +168,7 @@ export default function GastosCondominio() {
                 <Button
                   startIcon={<Add />}
                   size="small"
-                  sx={{ color, textTransform: "none", fontWeight: "bold" }}
+                  sx={{ color: sectionColor, textTransform: "none", fontWeight: "bold" }}
                   onClick={() => handleAdd(tipo as any)}
                 >
                   Añadir
@@ -166,9 +179,11 @@ export default function GastosCondominio() {
               <Box
                 display="grid"
                 gridTemplateColumns="40px 1.4fr 1.4fr 60px 100px 90px 70px 50px"
-                bgcolor="#2a2a2a"
-                p={1}
-                borderRadius={1}
+                sx={{ 
+                  bgcolor: theme.palette.mode === 'dark' ? "grey.900" : "grey.200", // Fondo gris dinámico
+                  p: 1, 
+                  borderRadius: 1 
+                }}
               >
                 {["Lin.", "Concepto", "Proveedor", "Espec.", "Nro.Doc.", "Monto", "Saldo", "Acc."].map((h) => (
                   <Typography
@@ -190,14 +205,16 @@ export default function GastosCondominio() {
                   gridTemplateColumns="40px 1.4fr 1.4fr 60px 100px 90px 70px 50px"
                   alignItems="center"
                   p={1}
-                  borderBottom="1px solid #2f2f2f"
-                  sx={{ "&:hover": { bgcolor: "#1b1b1b" } }}
+                  sx={{ 
+                    borderBottom: `1px solid ${theme.palette.divider}`,
+                    "&:hover": { bgcolor: "action.hover" } // Hover dinámico
+                  }}
                 >
                   <Typography fontSize="0.8rem">{i + 1}.</Typography>
                   <Typography fontSize="0.8rem">{g.concepto}</Typography>
                   <Typography fontSize="0.8rem">{g.proveedor}</Typography>
                   <Box display="flex" justifyContent="center">
-                    <Checkbox checked={g.especial} size="small" sx={{ color: "#aaa" }} disabled />
+                    <Checkbox checked={g.especial} size="small" disabled />
                   </Box>
                   <Typography fontSize="0.8rem">{g.documento}</Typography>
                   <Typography fontSize="0.8rem" textAlign="right">{formatCurrency(g.monto)}</Typography>
@@ -211,8 +228,17 @@ export default function GastosCondominio() {
               ))}
 
               {/* Total de sección */}
-              <Box display="flex" justifyContent="flex-end" bgcolor="#222" p={1.5} borderRadius={1} mt={1}>
-                <Typography fontWeight="bold" fontSize="0.9rem" color={color}>
+              <Box 
+                display="flex" 
+                justifyContent="flex-end" 
+                sx={{ 
+                  bgcolor: theme.palette.mode === 'dark' ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.02)",
+                  p: 1.5, 
+                  borderRadius: 1, 
+                  mt: 1 
+                }}
+              >
+                <Typography fontWeight="bold" fontSize="0.9rem" sx={{ color: sectionColor }}>
                   Total {tipo === "ordinario" ? "Ordinarios" : "Extraordinarios"}: {formatCurrency(total)}
                 </Typography>
               </Box>
@@ -230,12 +256,13 @@ export default function GastosCondominio() {
               top: "50%",
               left: "50%",
               transform: "translate(-50%, -50%)",
-              bgcolor: "#1e1e1e",
+              bgcolor: "background.paper", // 👈 Dinámico
               p: 3,
               borderRadius: 2,
               boxShadow: 24,
               minWidth: 320,
-              color: "#fff",
+              color: "text.primary",         // 👈 Dinámico
+              border: `1px solid ${theme.palette.divider}`
             }}
           >
             <Typography variant="h6" mb={2}>

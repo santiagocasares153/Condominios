@@ -2,16 +2,19 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
-  ArrowLeftRight, 
+ // ArrowLeftRight, 
   ChevronLeft,
   History,
-  FileText,
-  Settings
+ // FileText,
+ // Settings,
+  PlusCircle // Icono adicional sugerido
 } from "lucide-react";
 import { Operaciones } from "./Operaciones";
 import { ResumenTab } from "./Resumen";
-import BancosPanel from "./BancosPanel"; // Importamos el nuevo componente
+import MovimientoBancos from "./MovimientoBancos"; // <--- Importamos el nuevo componente
+import BancosPanel from "./BancosPanel"; 
 import NavigationMenu from "../../Menu";
+import HistorialBanco from "./EstadoDeCuenta";
 
 export const BancoDetalle = () => {
   const location = useLocation();
@@ -22,36 +25,54 @@ export const BancoDetalle = () => {
 
   const tabs = [
     { id: "resumen", icon: LayoutDashboard, label: "Resumen" },
-    { id: "operaciones", icon: ArrowLeftRight, label: "Operaciones" },
+  //  { id: "operaciones", icon: ArrowLeftRight, label: "Operaciones" },
+    { id: "movimientos", icon: PlusCircle, label: "Movimientos" }, // <--- Agregamos la pestaña
     { id: "historial", icon: History, label: "Historial" },
-    { id: "documentos", icon: FileText, label: "Docs" },
-    { id: "config", icon: Settings, label: "Config" },
+   // { id: "documentos", icon: FileText, label: "Docs" },
+   // { id: "config", icon: Settings, label: "Config" },
   ];
 
   const renderContent = () => {
     switch (activeTab) {
-      case "resumen": return <ResumenTab banco={banco} />;
-      case "operaciones": return <Operaciones idEntidad={banco?.idEntidad || 0} tasaOficial={banco?.tasaOficial || 0} periodoActual={banco?.periodoActual || { periodo: 0, año: 0 }} />;
-      default: return <ResumenTab banco={banco} />;
+      case "resumen": 
+        return <ResumenTab banco={banco} />;
+     // case "operaciones": 
+        return <Operaciones 
+          idEntidad={banco?.idEntidad || 0} 
+          tasaOficial={banco?.tasaOficial || 0} 
+          periodoActual={banco?.periodoActual || { periodo: 0, año: 0 }} 
+        />;
+      case "movimientos": // <--- Renderizamos el nuevo componente
+        return <MovimientoBancos 
+          idBanco={banco?.id} 
+          numeroCuenta={banco?.datos?.numeroCuenta} 
+          moneda={banco?.datos?.moneda} 
+      />
+      case "historial": // <--- Caso actualizado
+        return <HistorialBanco idBanco={banco?.id} />;
+      default: 
+        return <ResumenTab banco={banco} />;
     }
   };
-return (
- <div className="max-w-7xl mx-auto p-4">
-  {/* Contenedor del Menú */}
-  <div className="mb-10 relative z-10"> 
-    <NavigationMenu />
-  </div>
-  
-  {/* Botón Volver Ajustado */}
-  <div className="relative z-20 flex">
-    <button 
-      onClick={() => navigate(-1)}
-        className="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-blue-500 mb-6 transition-colors"
-    >
-      <ChevronLeft className="w-5 h-5 mr-1" />
-      Volver a la lista
-    </button>
-  </div>
+
+  return (
+    <div className="max-w-7xl mx-auto p-4">
+      {/* Contenedor del Menú */}
+      <div className="mb-10 relative z-10"> 
+        <NavigationMenu />
+      </div>
+      
+      {/* Botón Volver */}
+      <div className="relative z-20 flex">
+        <button 
+          onClick={() => navigate(-1)}
+          className="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-blue-500 mb-6 transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5 mr-1" />
+          Volver a la lista
+        </button>
+      </div>
+
       {/* Grid Principal */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         

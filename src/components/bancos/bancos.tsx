@@ -60,6 +60,7 @@ const TableBancos = () => {
             const response = await axios.get<ApiResponseWrapper>(`${BASE_API_URL}/`, {
                 headers: { Authorization: `Bearer ${user?.token}` },
             });
+            console.log("Respuesta cruda de la API:", response.data);
 
             const resData = response.data?.data?.[0];
             if (!resData || !resData["@res"]) {
