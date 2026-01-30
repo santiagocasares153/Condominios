@@ -8,11 +8,12 @@ import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
 import HomePage from "./components/HomePage";
 import ProveedoresTable from "./components/proveedores/Proveedores";
 import ProveedorForm from "./components/proveedores/ProveedorForm";
-import GastosForm from "./components/Gastos/GastosForm";
+//import GastosForm from "./components/Gastos/GastosForm";
 import MainPage from "./Screens/Entidades/MainPage";
 import TableBancos from "./components/bancos/bancos";
 import FormBanco from "./components/bancos/FormBanco";
 import { BancoDetalle } from "./components/bancos/detallesBancos/BancoDetalle";
+import PanelGastos from "./components/Gastos/PanelGastos";
 
 function AppContent() {
   const { isDarkMode } = useDarkMode();
@@ -38,7 +39,7 @@ return (
           
           <Route path="/proveedores" element={<ProveedoresTable />} />
           <Route path="/proveedoresForm" element={<ProveedorForm />} />
-          <Route path="/gastos" element={<GastosForm />} />
+          <Route path="/gastos" element={<PanelGastos />} />
           <Route path="/bancos" element={<TableBancos />} />
            <Route path="/formbancos" element={<FormBanco />} />
           <Route path="/bancoDetalle" element={<BancoDetalle />} />

@@ -101,7 +101,7 @@ export default function GastosCondominio() {
     }));
     setModalOpen(false);
     setRowToDelete(null);
-  };
+  };  
 
   const totalOrdinarios = data.ordinarios.reduce((a, b) => a + b.monto, 0);
   const totalExtraordinarios = data.extraordinarios.reduce((a, b) => a + b.monto, 0);

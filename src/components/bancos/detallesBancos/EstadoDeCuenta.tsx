@@ -5,7 +5,10 @@ import {
     ArrowDown, 
     Loader2, 
     Landmark,
-    Printer // Importamos el icono de impresora
+    Printer,
+    MoreVertical,
+    ClipboardCopy,
+    FileSpreadsheet
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
@@ -36,6 +39,7 @@ const HistorialBanco: React.FC<HistorialBancoProps> = ({ idBanco }) => {
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isMenuOpen, setIsMenuOpen] = useState(false); // Estado para el menú
     const [sortColumn, setSortColumn] = useState<string>('fecha');
     const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
     
@@ -43,6 +47,10 @@ const HistorialBanco: React.FC<HistorialBancoProps> = ({ idBanco }) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [htmlContent, setHtmlContent] = useState<string | null>(null);
     const [loadingModal, setLoadingModal] = useState(false);
+
+    // Clases para el diseño del menú
+    const menuItemClasses = "flex items-center space-x-3 px-4 py-2 text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 w-full transition-colors";
+    const menuIconClasses = "w-4 h-4 text-gray-500 dark:text-gray-400";
 
     const fetchHistorial = useCallback(async () => {
         if (!idBanco) return;
@@ -70,21 +78,30 @@ const HistorialBanco: React.FC<HistorialBancoProps> = ({ idBanco }) => {
         fetchHistorial();
     }, [fetchHistorial]);
 
-    // Función para obtener el HTML de la API e imprimir
-    const handleOpenModal = async (movimientoId: string) => {
+    // Función para imprimir el historial completo (Acción del menú)
+    const handlePrintHistorial = async () => {
+        setIsMenuOpen(false);
         setModalOpen(true);
         setLoadingModal(true);
         try {
-            // REEMPLAZAR CON TU RUTA DE API PARA EL FORMATO HTML
-            const response = await axios.get<any>(`https://bknd.condominios-online.com/bancos/formato-impresion/${movimientoId}`, {
+            const payload = {
+                nombre_funcion: "prepFrmEdoCtaBco", // Ajusta el nombre según tu backend
+                usuario: user?.nombreUsuario || "",
+                idBanco: idBanco
+            };
+
+            const response = await axios.post<{ result?: string }>(`https://bknd.condominios-online.com/entidades/function`, payload, {
                 headers: { Authorization: `Bearer ${user?.token}` }
             });
-            
-            // Suponiendo que la API devuelve el HTML directamente o dentro de un objeto
-            setHtmlContent(response.data.html || response.data); 
+            console.log("Respuesta de formato de impresión:", response.data);
+            if (response.data?.result) {
+                setHtmlContent(response.data.result);
+            } else {
+                setHtmlContent("<p class='text-center p-4'>No se recibió contenido válido del servidor.</p>");
+            }
         } catch (error) {
-            console.error("Error al obtener formato de impresión:", error);
-            setHtmlContent("<p className='text-red-500'>Error al cargar el formato.</p>");
+            console.error("Error al generar formato de impresión:", error);
+            setHtmlContent("<p class='text-red-500 p-4 font-bold'>Error al conectar con el servidor.</p>");
         } finally {
             setLoadingModal(false);
         }
@@ -127,7 +144,7 @@ const HistorialBanco: React.FC<HistorialBancoProps> = ({ idBanco }) => {
                     <h3 className="text-xs font-bold uppercase tracking-widest">Historial de Cuenta</h3>
                 </div>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                     <div className="relative">
                         <input 
                             type="text" 
@@ -137,6 +154,32 @@ const HistorialBanco: React.FC<HistorialBancoProps> = ({ idBanco }) => {
                             className="pl-8 pr-2 py-1 border rounded-md text-[11px] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 w-32 md:w-64"
                         />
                         <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                    </div>
+
+                    {/* MENÚ DE ACCIONES */}
+                    <div className="relative">
+                        <button 
+                            onClick={() => setIsMenuOpen(prev => !prev)} 
+                            className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        >
+                            <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                        </button>
+                        {isMenuOpen && (
+                            <div className="absolute right-0 mt-2 w-52 rounded-md shadow-xl bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-[50] border dark:border-gray-700">
+                                <div className="py-1">
+                                    <button onClick={() => setIsMenuOpen(false)} className={menuItemClasses}>
+                                        <ClipboardCopy className={menuIconClasses} /> <span>Copiar datos</span>
+                                    </button>
+                                    <button onClick={handlePrintHistorial} className={menuItemClasses}>
+                                        <Printer className={menuIconClasses} /> <span>Imprimir Reporte</span>
+                                    </button>
+                                    <div className="border-t dark:border-gray-700 my-1"></div>
+                                    <button onClick={() => setIsMenuOpen(false)} className={menuItemClasses}>
+                                        <FileSpreadsheet className={menuIconClasses} /> <span>Exportar Excel</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -155,12 +198,11 @@ const HistorialBanco: React.FC<HistorialBancoProps> = ({ idBanco }) => {
                                     { label: 'Débito (-)', key: 'debito', align: 'right' },
                                     { label: 'Crédito (+)', key: 'credito', align: 'right' },
                                     { label: 'Saldo', key: 'saldo', align: 'right' },
-                                    { label: '', key: 'actions', align: 'center' }, // Columna para el botón
                                 ].map((col) => (
                                     <th 
                                         key={col.key}
-                                        onClick={() => col.key !== 'actions' && handleSort(col.key)}
-                                        className={`px-3 py-3 text-[10px] font-bold uppercase text-gray-500 dark:text-gray-400 ${col.key !== 'actions' ? 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700' : ''} ${col.align === 'right' ? 'text-right' : 'text-left'}`}
+                                        onClick={() => handleSort(col.key)}
+                                        className={`px-3 py-3 text-[10px] font-bold uppercase text-gray-500 dark:text-gray-400 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 ${col.align === 'right' ? 'text-right' : 'text-left'}`}
                                     >
                                         <div className={`flex items-center gap-1 ${col.align === 'right' ? 'justify-end' : 'justify-start'}`}>
                                             {col.label}
@@ -173,7 +215,7 @@ const HistorialBanco: React.FC<HistorialBancoProps> = ({ idBanco }) => {
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700 text-[11px]">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={7} className="py-20 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-500" /></td>
+                                    <td colSpan={6} className="py-20 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-500" /></td>
                                 </tr>
                             ) : filteredData.length > 0 ? (
                                 filteredData.map((t, idx) => (
@@ -190,27 +232,17 @@ const HistorialBanco: React.FC<HistorialBancoProps> = ({ idBanco }) => {
                                         <td className={`px-3 py-3 text-right font-black whitespace-nowrap bg-gray-50/50 dark:bg-gray-900/20 ${getSaldoColor(parseFloat(t.saldo))}`}>
                                             {formatMoney(t.saldo)}
                                         </td>
-                                        <td className="px-3 py-3 text-center">
-                                            <button 
-                                                onClick={() => handleOpenModal(t.id)}
-                                                className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-md transition-colors"
-                                                title="Imprimir comprobante"
-                                            >
-                                                <Printer size={16} />
-                                            </button>
-                                        </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={7} className="px-4 py-20 text-center text-gray-400 italic">No hay movimientos.</td>
+                                    <td colSpan={6} className="px-4 py-20 text-center text-gray-400 italic">No hay movimientos.</td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
                 </div>
 
-                {/* Integración del Modal */}
                 <ModalImprimirBancos 
                     isOpen={modalOpen} 
                     onClose={() => {
